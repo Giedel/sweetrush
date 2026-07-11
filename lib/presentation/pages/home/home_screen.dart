@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sweetrush/presentation/pages/inventory/inventory_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       // extendBody ensures the background color/widgets flow under the floating nav
       extendBody: true, 
+      appBar: AppBar(
+        title: const Text('Sweet Rush POS', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.inventory_2_outlined),
+            tooltip: 'Manage Inventory',
+            onPressed: () {
+              // Push to the Inventory Page
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const InventoryPage()),
+              );
+            },
+          ),
+        ],
+      ),
       body: _pages[_currentIndex],
       bottomNavigationBar: SafeArea(
         child: Container(
