@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sweetrush/presentation/pages/inventory/add_product_page.dart';
 import 'package:uuid/uuid.dart'; // Add 'uuid: ^4.3.3' to pubspec.yaml for generating IDs
 import '../../../domain/entities/ingredient.dart';
 import '../../blocs/inventory/inventory_bloc.dart';
@@ -105,7 +106,13 @@ class _InventoryPageState extends State<InventoryPage> {
         title: const Text('Inventory Management'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.fastfood_outlined),
+            tooltip: 'Add Menu Product',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddProductPage())),
+          ),
+          IconButton(
             icon: const Icon(Icons.add_box_rounded),
+            tooltip: 'Add Raw Stock',
             onPressed: () => _showAddIngredientForm(context),
           )
         ],
