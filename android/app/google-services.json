@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "1031710300824",
+    "project_id": "sweetrush-32888",
+    "storage_bucket": "sweetrush-32888.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1031710300824:android:d2c64d2316ccf070f68eed",
+        "android_client_info": {
+          "package_name": "com.example.sweetrush"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB47yg8OOqwfIdPFl-7jQ7FroDKzBKumdQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1031710300824:android:072c200b48650ce1f68eed",
+        "android_client_info": {
+          "package_name": "com.store.sweetrush"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB47yg8OOqwfIdPFl-7jQ7FroDKzBKumdQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1031710300824:android:b88e5a74395a5559f68eed",
+        "android_client_info": {
+          "package_name": "com.sweetrush.shop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB47yg8OOqwfIdPFl-7jQ7FroDKzBKumdQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
