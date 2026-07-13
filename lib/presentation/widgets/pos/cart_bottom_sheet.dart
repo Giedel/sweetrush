@@ -9,7 +9,6 @@ class CartBottomSheet extends StatelessWidget {
   const CartBottomSheet({super.key});
 
   static void show(BuildContext context) {
-    // Capture the existing instance of the Bloc before entering the new Navigator route
     final posBloc = context.read<PosBloc>();
 
     showModalBottomSheet(
@@ -19,7 +18,7 @@ class CartBottomSheet extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (_) => BlocProvider.value(
-        value: posBloc, // Securely pass down our provider instance
+        value: posBloc,
         child: const CartBottomSheet(),
       ),
     );
@@ -33,12 +32,7 @@ class CartBottomSheet extends StatelessWidget {
         if (state is! PosLoaded || state.cartItems.isEmpty) {
           return const SizedBox(
             height: 200,
-            child: Center(
-              child: Text(
-                'Basket is empty',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
+            child: Center(child: Text('Basket is empty', style: TextStyle(color: Colors.grey))),
           );
         }
 
@@ -54,12 +48,8 @@ class CartBottomSheet extends StatelessWidget {
               children: [
                 Container(
                   margin: const EdgeInsets.symmetric(vertical: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -67,10 +57,7 @@ class CartBottomSheet extends StatelessWidget {
                     children: [
                       Icon(Icons.receipt_long_outlined),
                       SizedBox(width: 8),
-                      Text(
-                        'Review Order',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      )
+                      Text('Review Order', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))
                     ],
                   ),
                 ),
@@ -88,37 +75,11 @@ class CartBottomSheet extends StatelessWidget {
                           child: const Icon(Icons.cake, size: 20),
                         ),
                         title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: item.isCustomized ? Colors.amber.shade100 : Colors.green.shade100,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                item.isCustomized ? 'Custom' : 'Default Mix',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: item.isCustomized ? Colors.amber.shade900 : Colors.green.shade900,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${item.selectedSize} | ${item.sweetnessLevel}',
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
-                        ),
+                        subtitle: Text('${item.selectedSize} | ${item.sweetnessLevel}', style: const TextStyle(fontSize: 12)),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              '\$${item.price.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                            Text('\$${item.price.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                             IconButton(
                               icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
                               onPressed: () => context.read<PosBloc>().add(RemoveFromCartEvent(index)),
@@ -138,10 +99,7 @@ class CartBottomSheet extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Subtotal', style: TextStyle(fontSize: 16, color: Colors.grey)),
-                            Text(
-                              '\$${total.toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            )
+                            Text('\$${total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -151,23 +109,97 @@ class CartBottomSheet extends StatelessWidget {
                             foregroundColor: theme.colorScheme.onPrimary,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 0,
                           ),
                           onPressed: () {
-                            Navigator.pop(context); // Safe dismissal
-                            context.read<PosBloc>().add(CheckoutCartEvent()); // Fire payment stream
+                            Navigator.pop(context); // Dismiss basket
+                            _showCashPaymentDialog(context, total); // Open dynamic calculator sheet
                           },
                           child: const Center(
-                            child: Text(
-                              'PROCEED TO PAYMENT',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
+                            child: Text('PROCEED TO PAYMENT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           ),
                         )
                       ],
                     ),
                   ),
                 )
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCashPaymentDialog(BuildContext context, double totalAmount) {
+    final posBloc = context.read<PosBloc>();
+    final TextEditingController cashController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            double cashInput = double.tryParse(cashController.text) ?? 0.0;
+            double changeDue = cashInput - totalAmount;
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: const Text('Cash Register Intake', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Order Total: \$${totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, color: Colors.grey)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: cashController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    autofocus: true,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    decoration: const InputDecoration(
+                      labelText: 'Cash Received',
+                      prefixText: '\$ ',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: changeDue >= 0 ? Colors.green.shade50 : Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      changeDue >= 0 
+                        ? 'Change Due: \$${changeDue.toStringAsFixed(2)}' 
+                        : 'Remaining Shortfall: \$${(totalAmount - cashInput).toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 16, 
+                        fontWeight: FontWeight.bold, 
+                        color: changeDue >= 0 ? Colors.green.shade800 : Colors.orange.shade900
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  onPressed: changeDue < 0 
+                    ? null 
+                    : () {
+                        Navigator.pop(dialogContext);
+                        posBloc.add(CheckoutCartEvent(cashReceived: cashInput));
+                      },
+                  child: const Text('CONFIRM PAID & PRINT'),
+                ),
               ],
             );
           },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sweetrush/presentation/pages/pos/pos_page.dart';
+import 'package:sweetrush/presentation/pages/pos/back_of_house_page.dart'; // IMPORT ADDED HERE
 import 'package:sweetrush/presentation/pages/inventory/inventory_page.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -12,16 +13,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  // These will eventually be replaced by your actual Front and Back pages
+  // UPDATED: Replaced hardcoded text layout with the real-time Stream layer
   final List<Widget> _pages = [
     const PosPage(),
-    const Center(child: Text("Back-of-House (Kitchen/Prep)")),
+    const BackOfHousePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // extendBody ensures the background color/widgets flow under the floating nav
       extendBody: true, 
       appBar: AppBar(
         title: const Text('Sweet Rush POS', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -30,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.inventory_2_outlined),
             tooltip: 'Manage Inventory',
             onPressed: () {
-              // Push to the Inventory Page
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const InventoryPage()),

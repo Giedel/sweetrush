@@ -3,7 +3,12 @@ import '../../../domain/entities/product.dart';
 abstract class PosEvent {}
 
 class LoadMenuEvent extends PosEvent {}
-class CheckoutCartEvent extends PosEvent {}
+
+// UPDATED: Now requires cash amount parameter
+class CheckoutCartEvent extends PosEvent {
+  final double cashReceived;
+  CheckoutCartEvent({required this.cashReceived});
+}
 
 class FilterMenuCategory extends PosEvent {
   final String category;
