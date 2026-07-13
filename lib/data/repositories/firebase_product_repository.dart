@@ -11,8 +11,8 @@ class FirebaseProductRepository implements ProductRepository {
   
   // Replace these with your actual Cloudinary credentials
   final CloudinaryPublic _cloudinary = CloudinaryPublic(
-    'YOUR_CLOUDINARY_CLOUD_NAME', 
-    'YOUR_CLOUDINARY_UPLOAD_PRESET', 
+    'o2go1aj8', 
+    'sweetrush-presets', 
     cache: false,
   );
 
@@ -42,7 +42,9 @@ class FirebaseProductRepository implements ProductRepository {
       id: product.id,
       name: product.name,
       price: product.price,
+      sizePrices: product.sizePrices,
       imageUrl: product.imageUrl,
+      category: product.category,
       recipeSequence: product.recipeSequence,
     );
 

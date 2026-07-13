@@ -16,6 +16,7 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     on<UpdateInventoryList>(_onUpdateInventoryList);
     on<FilterInventoryCategory>(_onFilterInventoryCategory);
     on<AddNewIngredient>(_onAddNewIngredient);
+    on<UpdateIngredientStock>(_onUpdateIngredientStock); // REGISTERED NEW EVENT HANDLER
   }
 
   void _onLoadInventory(LoadInventory event, Emitter<InventoryState> emit) {
@@ -78,8 +79,21 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
       // The Firestore stream will detect the change and automatically trigger UpdateInventoryList.
       await _inventoryRepository.addIngredient(event.ingredient);
     } catch (e) {
-      // If saving fails, you can log the error or emit a state that triggers a SnackBar in the UI.
       print("Error saving ingredient: $e");
+    }
+  }
+
+  // NEW METHOD: Dispatches calculations down to the database asynchronously
+  Future<void> _onUpdateIngredientStock(UpdateIngredientStock event, Emitter<InventoryState> emit) async {
+    try {
+      await _inventoryRepository.updateIngredientStock(
+        ingredientId: event.ingredientId,
+        quantityChange: event.quantityChange,
+        isOverride: event.isOverride,
+      );
+      // Realtime snapshots from getInventoryStream handle emitting the updated list automatically!
+    } catch (e) {
+      print("Error updating stock execution: $e");
     }
   }
 

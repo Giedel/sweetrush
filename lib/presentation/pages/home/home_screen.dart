@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sweetrush/presentation/pages/pos/pos_page.dart';
 import 'package:sweetrush/presentation/pages/inventory/inventory_page.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // These will eventually be replaced by your actual Front and Back pages
   final List<Widget> _pages = [
-    const Center(child: Text("Front-of-House (Cashier/POS)")),
+    const PosPage(),
     const Center(child: Text("Back-of-House (Kitchen/Prep)")),
   ];
 
