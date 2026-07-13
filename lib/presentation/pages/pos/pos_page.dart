@@ -19,8 +19,20 @@ class PosPage extends StatelessWidget {
     context.read<PosBloc>().add(LoadMenuEvent());
 
     return BlocListener<PosBloc, PosState>(
-      listenWhen: (previous, current) => 
-          current is PosCheckoutSuccess || current is PosError,
+      listenWhen: (previous, current) {
+        if (current is PosCheckoutSuccess || current is PosError) {
+          return true;
+        }
+
+        if (current is PosLoaded) {
+          final previousErrorMessage =
+              previous is PosLoaded ? previous.errorMessage : null;
+          return current.errorMessage != null &&
+              current.errorMessage != previousErrorMessage;
+        }
+
+        return false;
+      },
       listener: (context, state) {
         if (state is PosCheckoutSuccess) {
           // Trigger the beautiful hanging receipt overlay window
@@ -30,6 +42,13 @@ class PosPage extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
+              backgroundColor: theme.colorScheme.error,
+            ),
+          );
+        } else if (state is PosLoaded && state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage!),
               backgroundColor: theme.colorScheme.error,
             ),
           );
