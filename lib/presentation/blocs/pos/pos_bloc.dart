@@ -31,8 +31,9 @@ class PosBloc extends Bloc<PosEvent, PosState> {
         if (event.category == 'All') {
           filtered = currentState.allProducts;
         } else {
+          // CORRECTION: Filter items by `p.category` instead of `p.selectedSize`
           filtered = currentState.allProducts
-              .where((p) => p.selectedSize.toLowerCase() == event.category.toLowerCase())
+              .where((p) => p.category.toLowerCase() == event.category.toLowerCase())
               .toList();
         }
 
@@ -84,8 +85,6 @@ class PosBloc extends Bloc<PosEvent, PosState> {
           await getMenuProducts.repository.checkoutOrder(itemsToCheckOut);
           emit(PosCheckoutSuccess(orderedItems: itemsToCheckOut, totalPaid: subtotal));
         } catch (e) {
-          // FAIL-SAFE: Instead of crashing completely to PosError(), we maintain the cart layout 
-          // and expose an error description string to the UI.
           String cleanError = e.toString().replaceAll("Exception: ", "");
           
           emit(PosLoaded(
@@ -93,7 +92,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
             filteredProducts: currentState.filteredProducts,
             cartItems: currentState.cartItems,
             selectedCategory: currentState.selectedCategory,
-            errorMessage: cleanError, // Handled cleanly via BlocListener inside pos_page.dart!
+            errorMessage: cleanError,
           ));
         }
       }
