@@ -6,8 +6,13 @@ class ProductModel extends Product {
     required super.id,
     required super.name,
     required super.price,
+    required super.sizePrices,
     required super.imageUrl,
+    required super.category,
     required super.recipeSequence,
+    super.selectedSize, // Inherits the default 'Regular' value cleanly
+    super.sweetnessLevel, // Inherits the default 'Normal Sweet' value cleanly
+    super.isCustomized, // Inherits the default false value cleanly
   });
 
   factory ProductModel.fromMap(Map<String, dynamic> map, String documentId) {
@@ -17,15 +22,27 @@ class ProductModel extends Product {
         .map((step) => RecipeStepModel.fromMap(Map<String, dynamic>.from(step)))
         .toList();
 
-    // Ensure sequence follows chronological execution sorting (1, 2, 3...)
     parsedSequence.sort((a, b) => a.stepOrder.compareTo(b.stepOrder));
+
+    // Handle extraction of nested map double variances safely
+    Map<String, double> parsedSizePrices = {};
+    if (map['sizePrices'] != null) {
+      (map['sizePrices'] as Map<dynamic, dynamic>).forEach((key, value) {
+        parsedSizePrices[key.toString()] = (value ?? 0.0).toDouble();
+      });
+    }
 
     return ProductModel(
       id: documentId,
       name: map['name'] ?? '',
       price: (map['price'] ?? 0.0).toDouble(),
+      sizePrices: parsedSizePrices,
       imageUrl: map['imageUrl'] ?? '',
+      category: map['category'] ?? 'Cakes',
       recipeSequence: parsedSequence,
+      selectedSize: map['selectedSize'] ?? 'Regular',
+      sweetnessLevel: map['sweetnessLevel'] ?? 'Normal Sweet',
+      isCustomized: map['isCustomized'] ?? false,
     );
   }
 
@@ -33,7 +50,12 @@ class ProductModel extends Product {
     return {
       'name': name,
       'price': price,
+      'sizePrices': sizePrices, // Firestore natively recognizes Map structures flatly
       'imageUrl': imageUrl,
+      'category': category,
+      'selectedSize': selectedSize,
+      'sweetnessLevel': sweetnessLevel,
+      'isCustomized': isCustomized,
       'recipeSequence': recipeSequence
           .map((step) => RecipeStepModel(
                 stepOrder: step.stepOrder,

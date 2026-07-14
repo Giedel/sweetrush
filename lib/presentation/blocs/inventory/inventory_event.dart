@@ -5,7 +5,7 @@ abstract class InventoryEvent extends Equatable {
   const InventoryEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 // Triggered when the app starts or the Inventory page is opened
@@ -38,4 +38,20 @@ class AddNewIngredient extends InventoryEvent {
 
   @override
   List<Object> get props => [ingredient];
+}
+
+// NEW EVENT: Added cleanly within the Equatable hierarchy
+class UpdateIngredientStock extends InventoryEvent {
+  final String ingredientId;
+  final double quantityChange;
+  final bool isOverride; // true = absolute value override, false = incremental delivery add
+
+  const UpdateIngredientStock({
+    required this.ingredientId,
+    required this.quantityChange,
+    this.isOverride = false,
+  });
+
+  @override
+  List<Object> get props => [ingredientId, quantityChange, isOverride];
 }

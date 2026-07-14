@@ -42,4 +42,22 @@ class FirebaseInventoryRepository implements InventoryRepository {
 
     await _firestore.collection('inventory').doc(ingredient.id).set(ingredientModel.toMap());
   }
+
+  // ADD THIS METHOD IMPLEMENTATION:
+  @override
+  Future<void> updateIngredientStock({
+    required String ingredientId,
+    required double quantityChange,
+    required bool isOverride,
+  }) async {
+    final docRef = _firestore.collection('inventory').doc(ingredientId);
+
+    if (isOverride) {
+      // Set absolute value manually
+      await docRef.update({'currentStock': quantityChange});
+    } else {
+      // Perform atomic database field calculation increments
+      await docRef.update({'currentStock': FieldValue.increment(quantityChange)});
+    }
+  }
 }

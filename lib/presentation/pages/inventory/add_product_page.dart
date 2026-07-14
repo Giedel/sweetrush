@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +10,7 @@ import '../../../domain/entities/recipe_step.dart';
 import '../../blocs/inventory/inventory_bloc.dart';
 import '../../blocs/inventory/inventory_state.dart';
 import '../../../data/repositories/firebase_product_repository.dart';
+import '../../../data/models/product_model.dart';
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({super.key});
@@ -20,17 +22,36 @@ class AddProductPage extends StatefulWidget {
 class _AddProductPageState extends State<AddProductPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _priceController = TextEditingController();
+  
+  final Map<String, TextEditingController> _sizeControllers = {
+    'Small': TextEditingController(text: '0.0'),
+    'Regular': TextEditingController(text: '0.0'),
+    'Large': TextEditingController(text: '0.0'),
+  };
   
   Uint8List? _webImage;
   String? _pickedFileName;
   bool _isSaving = false;
+  String _selectedCategory = 'Cakes';
 
-  // The active sequence steps being configured for this item
   final List<RecipeStep> _recipeSteps = [];
-
-  // Instantiating the data service directly for simplicity in this view
   final _productRepository = FirebaseProductRepository();
+  late final Stream<InventoryState> _inventoryStateStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _inventoryStateStream = context.read<InventoryBloc>().stream;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    for (var controller in _sizeControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -45,7 +66,12 @@ class _AddProductPageState extends State<AddProductPage> {
   }
 
   void _addRecipeStep(List<Ingredient> availableIngredients) {
-    if (availableIngredients.isEmpty) return;
+    if (availableIngredients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No base ingredients available in stock registers!')),
+      );
+      return;
+    }
     
     setState(() {
       int nextOrder = _recipeSteps.length + 1;
@@ -61,7 +87,7 @@ class _AddProductPageState extends State<AddProductPage> {
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate() || _webImage == null || _recipeSteps.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please upload an image, fill details, and add at least one recipe step!')),
+        const SnackBar(content: Text('Please upload an image, fill details, and append your recipe steps!')),
       );
       return;
     }
@@ -69,24 +95,30 @@ class _AddProductPageState extends State<AddProductPage> {
     setState(() => _isSaving = true);
 
     try {
-      // 1. Upload the image to Cloudinary
       String secureUrl = await _productRepository.uploadImage(_webImage!, _pickedFileName!);
 
-      // 2. Build the Product object
-      final targetProduct = Product(
+      final Map<String, double> parsedSizePrices = {};
+      _sizeControllers.forEach((size, controller) {
+        parsedSizePrices[size] = double.tryParse(controller.text) ?? 0.0;
+      });
+
+      final double fallbackBasePrice = parsedSizePrices['Regular'] ?? parsedSizePrices.values.first;
+
+      final targetProduct = ProductModel(
         id: const Uuid().v4(),
         name: _nameController.text,
-        price: double.parse(_priceController.text),
+        price: fallbackBasePrice,
+        sizePrices: parsedSizePrices,
         imageUrl: secureUrl,
+        category: _selectedCategory,
         recipeSequence: _recipeSteps,
       );
 
-      // 3. Save to Firestore
       await _productRepository.addProduct(targetProduct);
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product added successfully!')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product added with variations successfully!')));
       }
     } catch (e) {
       if (mounted) {
@@ -99,10 +131,50 @@ class _AddProductPageState extends State<AddProductPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Menu Product')),
-      body: BlocBuilder<InventoryBloc, InventoryState>(
-        builder: (context, state) {
+      appBar: AppBar(
+        title: const Text('Create Menu Product'),
+        // CLEAN UP: Moved Save action out of the scroll layout and up to the AppBar
+        actions: [
+          _isSaving
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.check_circle_outline, size: 28),
+                  tooltip: 'Save Menu Product',
+                  onPressed: _saveProduct,
+                ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: StreamBuilder<InventoryState>(
+        stream: _inventoryStateStream,
+        initialData: context.read<InventoryBloc>().state,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Failed to load inventory: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+
+          final state = snapshot.data;
+
+          if (state is InventoryError) {
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+
           if (state is! InventoryLoaded) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -114,100 +186,117 @@ class _AddProductPageState extends State<AddProductPage> {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                // Product Metadata
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Product Name (e.g., Mango Frappe)'),
+                  decoration: const InputDecoration(labelText: 'Product Name (e.g., Mango Sweet Frappe)', border: OutlineInputBorder()),
                   validator: (v) => v!.isEmpty ? 'Required' : null,
                 ),
-                TextFormField(
-                  controller: _priceController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Selling Price (PHP)'),
-                  validator: (v) => v!.isEmpty ? 'Required' : null,
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // Image Picker Preview Area
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(labelText: 'Menu Category', border: OutlineInputBorder()),
+                  items: ['Cakes', 'Pastries', 'Drinks', 'Custom Blends'].map((cat) {
+                    return DropdownMenuItem(value: cat, child: Text(cat));
+                  }).toList(),
+                  onChanged: (val) => setState(() => _selectedCategory = val ?? 'Cakes'),
+                ),
+                const SizedBox(height: 24),
+
+                Text('Size & Price Configuration (PHP)', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                const Divider(),
+                Row(
+                  children: _sizeControllers.entries.map((entry) {
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: TextFormField(
+                          controller: entry.value,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: entry.key,
+                            border: const OutlineInputBorder(),
+                            prefixText: '₱',
+                          ),
+                          validator: (v) => v!.isEmpty ? 'Required' : null,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+
                 GestureDetector(
                   onTap: _pickImage,
                   child: Container(
                     height: 150,
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
+                      border: Border.all(color: Colors.grey.shade400),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: _webImage != null
                         ? ClipRRect(borderRadius: BorderRadius.circular(11), child: Image.memory(_webImage!, fit: BoxFit.cover))
-                        : const Center(child: Icon(Icons.add_a_photo_outlined, size: 40)),
+                        : const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.add_a_photo_outlined, size: 40), SizedBox(height: 8), Text('Upload Image')])),
                   ),
                 ),
                 const SizedBox(height: 30),
 
-                // Recipe Configuration Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Assembly Recipe Sequence', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('Base Recipe Mix', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                     ElevatedButton.icon(
                       onPressed: () => _addRecipeStep(ingredients),
                       icon: const Icon(Icons.add),
-                      label: const Text('Add Step'),
+                      label: const Text('Add Ingredient'),
                     )
                   ],
                 ),
                 const Divider(),
 
-                // List of Configured Steps
-                ..._recipeSteps.asMap().entries.map((entry) {
-                  int idx = entry.key;
-                  RecipeStep step = entry.value;
+                ...List.generate(_recipeSteps.length, (idx) {
+                  final step = _recipeSteps[idx];
 
                   return Card(
+                    key: ValueKey('recipe_step_${step.stepOrder}_${step.ingredientId}'),
                     margin: const EdgeInsets.symmetric(vertical: 6),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
-                      key: ValueKey(idx),
                       child: Row(
                         children: [
                           CircleAvatar(child: Text('${step.stepOrder}')),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: DropdownButton<String>(
-                              value: step.ingredientId,
-                              isExpanded: true,
-                              items: ingredients.map((ing) {
-                                return DropdownMenuItem(value: ing.id, child: Text(ing.name));
-                              }).toList(),
-                              onChanged: (newId) {
-                                if (newId == null) return;
-                                final matchingIng = ingredients.firstWhere((i) => i.id == newId);
-                                setState(() {
-                                  _recipeSteps[idx] = RecipeStep(
-                                    stepOrder: step.stepOrder,
-                                    ingredientId: matchingIng.id,
-                                    ingredientName: matchingIng.name,
-                                    quantityRequired: step.quantityRequired,
-                                  );
-                                });
-                              },
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: step.ingredientId,
+                                isExpanded: true,
+                                items: ingredients.map((ing) {
+                                  return DropdownMenuItem(value: ing.id, child: Text('${ing.name} (${ing.unit})'));
+                                }).toList(),
+                                onChanged: (newId) {
+                                  if (newId == null) return;
+                                  final matchingIng = ingredients.firstWhere((i) => i.id == newId);
+                                  setState(() {
+                                    _recipeSteps[idx] = step.copyWith(
+                                      ingredientId: matchingIng.id,
+                                      ingredientName: matchingIng.name,
+                                    );
+                                  });
+                                },
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           SizedBox(
-                            width: 80,
+                            width: 90,
                             child: TextFormField(
                               initialValue: step.quantityRequired.toString(),
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(suffixText: 'qty'),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(labelText: 'Quantity', isDense: true),
                               onChanged: (val) {
                                 double qty = double.tryParse(val) ?? 0.0;
-                                _recipeSteps[idx] = RecipeStep(
-                                  stepOrder: step.stepOrder,
-                                  ingredientId: step.ingredientId,
-                                  ingredientName: step.ingredientName,
-                                  quantityRequired: qty,
-                                );
+                                _recipeSteps[idx] = step.copyWith(quantityRequired: qty);
                               },
                             ),
                           ),
@@ -216,14 +305,9 @@ class _AddProductPageState extends State<AddProductPage> {
                             onPressed: () {
                               setState(() {
                                 _recipeSteps.removeAt(idx);
-                                // Re-index step orders sequentially
+                                // Re-index remaining sequences immutably
                                 for (int i = 0; i < _recipeSteps.length; i++) {
-                                  _recipeSteps[i] = RecipeStep(
-                                    stepOrder: i + 1,
-                                    ingredientId: _recipeSteps[i].ingredientId,
-                                    ingredientName: _recipeSteps[i].ingredientName,
-                                    quantityRequired: _recipeSteps[i].quantityRequired,
-                                  );
+                                  _recipeSteps[i] = _recipeSteps[i].copyWith(stepOrder: i + 1);
                                 }
                               });
                             },
@@ -233,15 +317,7 @@ class _AddProductPageState extends State<AddProductPage> {
                     ),
                   );
                 }),
-                const SizedBox(height: 30),
-
-                _isSaving
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: _saveProduct,
-                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                        child: const Text('Save Menu Product'),
-                      ),
+                const SizedBox(height: 40),
               ],
             ),
           );
