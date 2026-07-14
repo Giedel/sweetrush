@@ -1,0 +1,37 @@
+.
+|-- core
+|   `-- theme
+|       `-- app_theme.dart
+|-- data
+|   |-- models
+|   |   |-- ingredient_model.dart
+|   |   |-- product_model.dart
+|   |   `-- recipe_step_model.dart
+|   `-- repositories
+|       |-- firebase_inventory_repository.dart
+|       `-- firebase_product_repository.dart
+|-- domain
+|   |-- entities
+|   |   |-- ingredient.dart
+|   |   |-- product.dart
+|   |   `-- recipe_step.dart
+|   `-- repositories
+|       |-- inventory_repository.dart
+|       `-- product_repository.dart
+|-- firebase_options.dart
+|-- main.dart
+|-- output.txt
+`-- presentation
+    |-- blocs
+    |   `-- inventory
+    |       |-- inventory_bloc.dart
+    |       |-- inventory_event.dart
+    |       `-- inventory_state.dart
+    `-- pages
+        |-- home
+        |   `-- home_screen.dart
+        `-- inventory
+            |-- add_product_page.dart
+            `-- inventory_page.dart
+
+15 directories, 20 files
