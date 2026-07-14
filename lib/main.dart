@@ -10,15 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: "AIzaSyDWbxIJtZo296oBrMvvGX5kP2_I4-BU7O0",
-      authDomain: "sweetrush-32888.firebaseapp.com",
-      projectId: "sweetrush-32888",
-      storageBucket: "sweetrush-32888.firebasestorage.app",
-      messagingSenderId: "1031710300824",
-      appId: "1:1031710300824:web:88e2aa383197c476f68eed",
-      measurementId: "G-FDNB3NQNKM"
-    ),
+    options: FirebaseOptions.currentPlatform,
   );
 
   runApp(const SweetRushApp());
