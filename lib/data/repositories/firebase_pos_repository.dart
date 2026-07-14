@@ -82,6 +82,7 @@ class FirebasePosRepository implements PosRepository {
           'isCustomized': item.isCustomized,
           'recipeSequence': item.recipeSequence.map((step) => {
             'stepOrder': step.stepOrder,
+            'ingredientId': step.ingredientId,
             'ingredientName': step.ingredientName,
             'quantityRequired': step.quantityRequired,
           }).toList(),
