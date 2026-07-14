@@ -1,4 +1,7 @@
 import 'package:sweetrush/firebase_options.dart';
+import 'package:sweetrush/presentation/pages/pos/pos_page.dart';
+import 'package:sweetrush/presentation/pages/pos/back_of_house_page.dart'; 
+import 'package:sweetrush/presentation/pages/inventory/inventory_page.dart';
 
 import 'core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -58,9 +61,6 @@ class SweetRushApp extends StatelessWidget {
   }
 }
 
-import 'package:sweetrush/presentation/pages/pos/pos_page.dart';
-import 'package:sweetrush/presentation/pages/pos/back_of_house_page.dart'; 
-import 'package:sweetrush/presentation/pages/inventory/inventory_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
