@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,6 +36,13 @@ class _AddProductPageState extends State<AddProductPage> {
 
   final List<RecipeStep> _recipeSteps = [];
   final _productRepository = FirebaseProductRepository();
+  late final Stream<InventoryState> _inventoryStateStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _inventoryStateStream = context.read<InventoryBloc>().stream;
+  }
 
   @override
   void dispose() {
@@ -143,8 +151,30 @@ class _AddProductPageState extends State<AddProductPage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: BlocBuilder<InventoryBloc, InventoryState>(
-        builder: (context, state) {
+      body: StreamBuilder<InventoryState>(
+        stream: _inventoryStateStream,
+        initialData: context.read<InventoryBloc>().state,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Failed to load inventory: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+
+          final state = snapshot.data;
+
+          if (state is InventoryError) {
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+
           if (state is! InventoryLoaded) {
             return const Center(child: CircularProgressIndicator());
           }
